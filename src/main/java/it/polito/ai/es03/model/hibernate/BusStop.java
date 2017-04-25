@@ -2,10 +2,13 @@ package it.polito.ai.es03.model.hibernate;
 
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.PrimaryKeyJoinColumn;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 
 @Entity
@@ -18,6 +21,9 @@ public class BusStop{
 	private double lng;
 	@OneToMany(mappedBy="primaryKey.busStop")
 	private List<BusLineStop> stoppingLines = new ArrayList<BusLineStop>();
+	@OneToOne(cascade=CascadeType.ALL)
+	@PrimaryKeyJoinColumn
+	private BusStopGeo geoPosition;
 	
 	public String getId() {
 		return id;
@@ -71,6 +77,12 @@ public class BusStop{
 		} else if (!id.equals(other.id))
 			return false;
 		return true;
+	}
+	public BusStopGeo getGeoPosition() {
+		return geoPosition;
+	}
+	public void setGeoPosition(BusStopGeo geoPosition) {
+		this.geoPosition = geoPosition;
 	}
 	
 }

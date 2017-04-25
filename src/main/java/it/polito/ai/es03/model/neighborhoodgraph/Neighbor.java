@@ -1,6 +1,6 @@
-package it.polito.ai.es03.model.neighborhoodlist;
+package it.polito.ai.es03.model.neighborhoodgraph;
 
-import it.polito.ai.es03.model.neighborhoodlist.Transport.TransportType;
+import it.polito.ai.es03.model.neighborhoodgraph.Transport.TransportType;
 
 public class Neighbor {
 

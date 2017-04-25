@@ -17,6 +17,8 @@ public class HibernateUtil {
 	private static final String DB_PASSWORD = "ai-user-password";
 	private static final String DB_DRIVER = "org.postgresql.Driver";
 	
+	private static final String DB_DIALECT = "org.hibernate.spatial.dialect.postgis.PostgisDialect";
+	
 	private static final String HBM2DDL_AUTO_SETTING = "validate";
 	private static final String FORMAT_SQL_SETTING = "true";
 	private static final String SHOW_SQL_SETTING = "true";
@@ -35,11 +37,13 @@ public class HibernateUtil {
 				.applySetting(Environment.FORMAT_SQL, FORMAT_SQL_SETTING)
 				.applySetting(Environment.SHOW_SQL, SHOW_SQL_SETTING)
 				.applySetting(Environment.CURRENT_SESSION_CONTEXT_CLASS, CURRENT_SESSION_CONTEXT_CLASS_SETTING)
+				.applySetting(Environment.DIALECT, DB_DIALECT)
 				.build();
 			Metadata metadata= new MetadataSources(serviceRegistry)
 				.addAnnotatedClass(BusLine.class)  //for all classes
 				.addAnnotatedClass(BusStop.class)
 				.addAnnotatedClass(BusLineStop.class)
+				.addAnnotatedClass(BusStopGeo.class)
 				.getMetadataBuilder()
 				.applyImplicitNamingStrategy(ImplicitNamingStrategyJpaCompliantImpl.INSTANCE)
 				.build();	

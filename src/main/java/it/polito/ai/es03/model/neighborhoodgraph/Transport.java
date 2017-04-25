@@ -1,4 +1,4 @@
-package it.polito.ai.es03.model.neighborhoodlist;
+package it.polito.ai.es03.model.neighborhoodgraph;
 
 public class Transport {
 
