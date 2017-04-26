@@ -26,8 +26,8 @@ public class Neighbor {
 		return transport;
 	}
 
-	public Double getCost(){
-		return distance*transport.getCoeff();
+	public Double getCost(){ //distance / speed = time
+		return distance/transport.getCoeff();
 	}
 	
 }

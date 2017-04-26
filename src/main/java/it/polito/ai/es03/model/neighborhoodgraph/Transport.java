@@ -7,18 +7,18 @@ public class Transport {
 	private TransportType type;
 	private int coeff;
 	
-	private static final int BUS_COST = 1;  
-	private static final int FOOT_COST = 2;
+	private static final int BUS_SPEED = 20; //medium speed almost 20km/h  
+	private static final int FOOT_SPEED = 5; //medium speed almost 5km/h
 	
 	public Transport(TransportType type){
 		this.type = type;
 		
 		switch (type) {
 		case BUS:
-			coeff = Transport.BUS_COST; 
+			coeff = Transport.BUS_SPEED; 
 			break;
 		case  FOOT:
-			coeff = Transport.FOOT_COST; 
+			coeff = Transport.FOOT_SPEED; 
 			break;
 		}
 	}
