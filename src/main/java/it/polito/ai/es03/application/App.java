@@ -18,6 +18,8 @@ import it.polito.ai.es03.model.neighborhoodgraph.Transport.TransportType;
 public class App 
 {
 	private static SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+	private static NeighborhoodGraph neighborhoodGraph = new NeighborhoodGraph();
+	private static final int RADIUS = 250;
 	
 	public static void main( String[] args )
     {
@@ -25,51 +27,26 @@ public class App
     	Session session = sessionFactory.getCurrentSession();
     	Transaction tx=null;
 	    try {
-			//download the list of all the stops from the DB
+	    	System.out.println( "Started graph filling!" );
+	    	tx=session.beginTransaction();
+	    	//find neighborhood for each stop on the DB
+	    	//1 - each stop on a bus line has as neighbor the next stop
     		System.out.println( "Downloading BusLines from DB..." );
-    		tx=session.beginTransaction();
     		Query query = session.createQuery("from BusLine");
-		    List<BusLine> busLines = query.list();
-		    //Fill in the neighborhood graph
-		    NeighborhoodGraph neighborhoodGraph = new NeighborhoodGraph();
+	    	List<BusLine> busLines = query.list();
 		    for(BusLine busLine : busLines){
-		    	System.out.println("=====================");
-		    	System.out.println("BusLine: "+busLine.getLine());
-		    	List<BusLineStop> busLineStops = busLine.getLineStops();
-		    	//sort by sequence number -> see BusLineStopPK compareTo()
-		    	Collections.sort(busLineStops);
-		    	int totStops = busLineStops.size();
-		    	for(int i=0; i < totStops - 1; i++ ){
-		    		//each stop has as neighbor the next stop
-		    		BusStop thisStop = busLineStops.get(i).getBusStop();
-		    		BusStop nextStop = busLineStops.get(i+1).getBusStop();
-		    		String thisStopId = thisStop.getId();
-		    		String nextStopId = nextStop.getId();
-		    		System.out.println("BusStop: "+thisStopId);
-		    		System.out.println("Neighbor: "+nextStopId);
-		    		//already into the graph
-		    		if(neighborhoodGraph.hasThisNeighbor(thisStopId, nextStopId)){
-		    			System.out.println("Already into graph!");
-		    			continue;
-		    		}
-		    		//compute distance between this stop and next stop
-		    		String stringQuery = "select ST_Distance(a.position, b.position) as distance "
-		    				+ "from busstopgeo a, busstopgeo b "
-		    				+ "where a.id = '"+thisStopId+"' "
-		    				+ "and b.id = '"+nextStopId+"';";
-		    		List<Object> result = session.createSQLQuery(stringQuery).list();
-		    		double distance = -1;
-		    		for (Object object : result) {
-						distance = (Double) object;
-		    		}
-		    		System.out.println("distance: "+distance+"m");
-		    		//insert into the graph
-		    		Neighbor neighbor = new Neighbor(nextStopId, distance, TransportType.BUS);
-		    		neighborhoodGraph.addNeighbor(thisStopId, neighbor);
-		    	}
-		    	System.out.println("=====================");
+		    	findNeighborhoodOnBusLineStops(busLine.getLineStops());
+		    }
+		    //2 - each stop has as neighbor the stops in 250m radius
+		    System.out.println( "Downloading BusStops from DB..." );
+    		query = session.createQuery("from BusStop");
+	    	List<BusStop> busStops = query.list();
+		    for(BusStop busStop : busStops){
+		    	String stopId = busStop.getId();
+		    	findNeighborhoodOnRadius(stopId, RADIUS);
 		    }
 		    tx.commit();
+		    System.out.println( "Completed graph filling!" );
 		    
 	    } finally {
 	    	if (session!=null && session.isOpen()) session.close(); 
@@ -77,4 +54,69 @@ public class App
 	    }
     }
     
+	private static void findNeighborhoodOnBusLineStops(List<BusLineStop> busLineStops){
+		
+		//sort stops by sequence number
+		Collections.sort(busLineStops);
+    	int totStops = busLineStops.size();
+    	for(int i=0; i < totStops - 1; i++ ){
+    		//each stop has as neighbor the next stop
+    		BusStop thisStop = busLineStops.get(i).getBusStop();
+    		BusStop nextStop = busLineStops.get(i+1).getBusStop();
+    		String thisStopId = thisStop.getId();
+    		String nextStopId = nextStop.getId();;
+    		//already into the graph
+    		if(neighborhoodGraph.hasThisNeighbor(thisStopId, nextStopId)){
+    			continue;
+    		}
+    		//compute distance between this stop and next stop
+    		String stringQuery = "select ST_Distance(a.position, b.position) as distance "
+    				+ "from busstopgeo a, busstopgeo b "
+    				+ "where a.id = '"+thisStopId+"' "
+    				+ "and b.id = '"+nextStopId+"';";
+    		Session session = sessionFactory.getCurrentSession();
+    		List<Object> result = session.createSQLQuery(stringQuery).list();
+    		double distance = -1;
+    		for (Object object : result) {
+				distance = (Double) object;
+    		}
+    		//insert into the graph
+    		Neighbor neighbor = new Neighbor(nextStopId, distance, TransportType.BUS);
+    		neighborhoodGraph.addNeighbor(thisStopId, neighbor);
+    	}
+	}
+	
+	private static void findNeighborhoodOnRadius(String stopId, int radius){
+		
+		//compute distance from stops in radius
+		String stringQuery = "select b.id as id, ST_Distance(a.position, b.position) as distance "
+				+ "from busstopgeo a, busstopgeo b "
+				+ "where a.id = '"+stopId+"' "
+				+ "and a.id < b.id "
+				+ "and ST_DWithin(a.position, b.position, "+radius+");";
+		Session session = sessionFactory.getCurrentSession();
+		List<Object[]> result = session.createSQLQuery(stringQuery).list();
+		for (Object[] object : result) {
+			String neighborId = (String) object[0]; 
+			double distance = (Double) object[1];
+			//ATTENTION -> THIS NEIGHBORHOOD IS BIDIRECTIONAL
+			//1 - from stopId to neighborId
+			//check if the neighbor is already into the graph
+			if(neighborhoodGraph.hasThisNeighbor(stopId, neighborId)){
+				continue;
+			}
+			//insert into the graph
+			Neighbor neighbor = new Neighbor(neighborId, distance, TransportType.FOOT);
+			neighborhoodGraph.addNeighbor(stopId, neighbor);
+			//2 - from neighborId to stopId
+			//check if the neighbor is already into the graph
+			if(neighborhoodGraph.hasThisNeighbor(neighborId, stopId)){
+				continue;
+			}
+			//insert into the graph
+			Neighbor neighbor2 = new Neighbor(stopId, distance, TransportType.FOOT);
+			neighborhoodGraph.addNeighbor(neighborId, neighbor2);
+    	}
+	}
+	
 }
