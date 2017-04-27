@@ -1,19 +1,21 @@
 package it.polito.ai.es03.application;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.geolatte.geom.G2D;
-import org.geolatte.geom.Point;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
+import it.polito.ai.es03.dijkstra.MinPathsCalculator;
+import it.polito.ai.es03.dijkstra.model.*;
+import it.polito.ai.es03.dijkstra.model.Transport.TransportType;
+import it.polito.ai.es03.dijkstra.model.mongo.MinPath;
 import it.polito.ai.es03.model.hibernate.*;
-import it.polito.ai.es03.model.neighborhoodgraph.*;
-import it.polito.ai.es03.model.neighborhoodgraph.Transport.TransportType;
 
 public class App 
 {
@@ -24,12 +26,15 @@ public class App
 	public static void main( String[] args )
     {
         
-    	Session session = sessionFactory.getCurrentSession();
+    	//Create graph to apply Dijkstra
+		List<String> busStopIds = new ArrayList<String>();
+		Session session = sessionFactory.getCurrentSession();
     	Transaction tx=null;
 	    try {
 	    	System.out.println( "Started graph filling!" );
 	    	tx=session.beginTransaction();
 	    	//find neighborhood for each stop on the DB
+	    	
 	    	//1 - each stop on a bus line has as neighbor the next stop
     		System.out.println( "Downloading BusLines from DB..." );
     		Query query = session.createQuery("from BusLine");
@@ -37,21 +42,39 @@ public class App
 		    for(BusLine busLine : busLines){
 		    	findNeighborhoodOnBusLineStops(busLine.getLineStops());
 		    }
+		    
 		    //2 - each stop has as neighbor the stops in 250m radius
 		    System.out.println( "Downloading BusStops from DB..." );
     		query = session.createQuery("from BusStop");
 	    	List<BusStop> busStops = query.list();
 		    for(BusStop busStop : busStops){
 		    	String stopId = busStop.getId();
+		    	busStopIds.add(stopId);
 		    	findNeighborhoodOnRadius(stopId, RADIUS);
 		    }
 		    tx.commit();
 		    System.out.println( "Completed graph filling!" );
 		    
-	    } finally {
+	    }catch (Exception e) {
+	    	System.out.println( "Not possible to Complete graph filling!" );
+			neighborhoodGraph = null;
+		} 
+	    finally {
 	    	if (session!=null && session.isOpen()) session.close(); 
 	    	session=null;
 	    }
+	    
+	    if(neighborhoodGraph == null) return;
+	    
+	    //DIJKSTRA TIME!
+	    
+	    MinPathsCalculator minPathsCalculator = new MinPathsCalculator(busStopIds, neighborhoodGraph);
+	    Map<String, List<MinPath>> minPathsByStop = new HashMap<String, List<MinPath>>();
+	    for (String stopId: neighborhoodGraph.getStopWithNeighborhood()) {
+			List<MinPath> minPaths = minPathsCalculator.getMinPathsFromOneStop(stopId);
+			minPathsByStop.put(stopId, minPaths);
+	    }
+	    
     }
     
 	private static void findNeighborhoodOnBusLineStops(List<BusLineStop> busLineStops){
@@ -64,9 +87,13 @@ public class App
     		BusStop thisStop = busLineStops.get(i).getBusStop();
     		BusStop nextStop = busLineStops.get(i+1).getBusStop();
     		String thisStopId = thisStop.getId();
-    		String nextStopId = nextStop.getId();;
+    		String nextStopId = nextStop.getId();
+    		if(thisStopId.equals(nextStopId)){
+    			//due to error in DB -> multiple line in single line. Not my fault!
+    			continue;
+    		}
     		//already into the graph
-    		if(neighborhoodGraph.hasThisNeighbor(thisStopId, nextStopId)){
+    		if(neighborhoodGraph.hasStopThisNeighbor(thisStopId, nextStopId)){
     			continue;
     		}
     		//compute distance between this stop and next stop
@@ -75,20 +102,20 @@ public class App
     				+ "where a.id = '"+thisStopId+"' "
     				+ "and b.id = '"+nextStopId+"';";
     		Session session = sessionFactory.getCurrentSession();
-    		List<Object> result = session.createSQLQuery(stringQuery).list();
+    		List<Object> result = session.createSQLQuery(stringQuery).list();    		
     		double distance = -1;
     		for (Object object : result) {
 				distance = (Double) object;
     		}
     		//insert into the graph
     		Neighbor neighbor = new Neighbor(nextStopId, distance, TransportType.BUS);
-    		neighborhoodGraph.addNeighbor(thisStopId, neighbor);
+    		neighborhoodGraph.addStopNeighbor(thisStopId, neighbor);
     	}
 	}
 	
 	private static void findNeighborhoodOnRadius(String stopId, int radius){
 		
-		//compute distance from stops in radius
+		//compute distance between stops within the radius
 		String stringQuery = "select b.id as id, ST_Distance(a.position, b.position) as distance "
 				+ "from busstopgeo a, busstopgeo b "
 				+ "where a.id = '"+stopId+"' "
@@ -102,20 +129,20 @@ public class App
 			//ATTENTION -> THIS NEIGHBORHOOD IS BIDIRECTIONAL
 			//1 - from stopId to neighborId
 			//check if the neighbor is already into the graph
-			if(neighborhoodGraph.hasThisNeighbor(stopId, neighborId)){
+			if(neighborhoodGraph.hasStopThisNeighbor(stopId, neighborId)){
 				continue;
 			}
 			//insert into the graph
 			Neighbor neighbor = new Neighbor(neighborId, distance, TransportType.FOOT);
-			neighborhoodGraph.addNeighbor(stopId, neighbor);
+			neighborhoodGraph.addStopNeighbor(stopId, neighbor);
 			//2 - from neighborId to stopId
 			//check if the neighbor is already into the graph
-			if(neighborhoodGraph.hasThisNeighbor(neighborId, stopId)){
+			if(neighborhoodGraph.hasStopThisNeighbor(neighborId, stopId)){
 				continue;
 			}
 			//insert into the graph
 			Neighbor neighbor2 = new Neighbor(stopId, distance, TransportType.FOOT);
-			neighborhoodGraph.addNeighbor(neighborId, neighbor2);
+			neighborhoodGraph.addStopNeighbor(neighborId, neighbor2);
     	}
 	}
 	

@@ -1,16 +1,16 @@
-package it.polito.ai.es03.model.neighborhoodgraph;
+package it.polito.ai.es03.dijkstra.model;
 
-import it.polito.ai.es03.model.neighborhoodgraph.Transport.TransportType;
+import it.polito.ai.es03.dijkstra.model.Transport.TransportType;
 
 public class Neighbor {
 
 	private String id;
-	private double distance;
+	private int distance; //meter
 	private Transport transport;
 	
 	public Neighbor(String id, double distance, TransportType transportType){
 		this.id = id;
-		this.distance = distance;
+		this.distance = ((Double)distance).intValue();
 		this.transport = new Transport(transportType);
 	}
 
@@ -18,7 +18,7 @@ public class Neighbor {
 		return id;
 	}
 
-	public double getDistance() {
+	public int getDistance() {
 		return distance;
 	}
 
@@ -26,8 +26,8 @@ public class Neighbor {
 		return transport;
 	}
 
-	public Double getCost(){ //distance / speed = time
-		return distance/transport.getCoeff();
+	public int getCost(){ //distance/speed speed = time -> seconds
+		return (distance/transport.getCoeff());
 	}
 	
 }
