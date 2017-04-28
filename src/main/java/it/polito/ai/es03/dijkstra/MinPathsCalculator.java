@@ -1,11 +1,5 @@
 package it.polito.ai.es03.dijkstra;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,14 +15,10 @@ public class MinPathsCalculator {
 	
 	private NeighborhoodGraph neighborhoodGraph;
 	private List<String> stopIds;
-	private PrintWriter printWriter;
 	
-	public MinPathsCalculator(List<String> stopIds, NeighborhoodGraph neighborhoodGraph) throws FileNotFoundException{
+	public MinPathsCalculator(List<String> stopIds, NeighborhoodGraph neighborhoodGraph) {
 		this.stopIds = stopIds;
 		this.neighborhoodGraph = neighborhoodGraph;
-		FileOutputStream fileOutputStream = new FileOutputStream("log.txt");
-		OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8);
-		printWriter = new PrintWriter(outputStreamWriter, true);
 	}
 	
 	public List<MinPath> getMinPathsFromOneStop(String initialStopId){
@@ -53,10 +43,9 @@ public class MinPathsCalculator {
 		//set up the initial node
 		Node initialNode = unvisitedSet.remove(initialStopId);
 		if(initialNode == null){
-			printWriter.println("***********************");
-			printWriter.println("Error - corrupted logic");
-			printWriter.println("***********************");
-			printWriter.close();
+			//System.out.println("***********************");
+			//System.out.println("Error - corrupted logic");
+			//System.out.println("***********************");
 			return null;
 		}
 		initialNode.setCost(0);
@@ -67,7 +56,7 @@ public class MinPathsCalculator {
 			Neighbor neighbor = neighborhoodEntry.getValue();
 			Node node = unvisitedSet.get(neighbor.getId());
 			if(node == null){
-				System.out.println("Hellone!!!");
+				//System.out.println("Hellone!!!");
 			}
 			node.setPreviousNodeId(initialNode.getId());
 			node.setCost(neighbor.getCost());
@@ -129,7 +118,7 @@ public class MinPathsCalculator {
 			minPaths.add(minPath);
 		}
 		
-		printWriter.close();
+		
 		return minPaths;
 		
 	}
@@ -175,27 +164,27 @@ public class MinPathsCalculator {
 		
 		getPreviousEdgeRecursive(visitedSet, minPath, lastPathNode);
 		
-		printWriter.println("=======================");
-		printWriter.println("Minimum path info:");
-		printWriter.println("from: "+minPath.getIdSource());
-		printWriter.println("to: "+minPath.getIdDestination());
-		printWriter.println("total cost: "+minPath.getTotalCost());
-		printWriter.println("");
-		printWriter.println("Edges:");
+		//System.out.println("=======================");
+		//System.out.println("Minimum path info:");
+		//System.out.println("from: "+minPath.getIdSource());
+		//System.out.println("to: "+minPath.getIdDestination());
+		//System.out.println("total cost: "+minPath.getTotalCost());
+		//System.out.println("");
+		//System.out.println("Edges:");
 		int i = minPath.getEdges().size() - 1;
 		int j = 1;
 		for(; i > -1; i--, j++){
 			Edge edge = minPath.getEdges().get(i);
-			printWriter.println("*****************");
-			printWriter.println("Edge nr."+j);
-			printWriter.println("from: "+edge.getIdSource());
-			printWriter.println("to: "+edge.getIdDestination());
-			printWriter.println("cost: "+edge.getCost());
-			printWriter.println("mode: "+edge.isMode());
-			printWriter.println("*****************");
+			//System.out.println("*****************");
+			//System.out.println("Edge nr."+j);
+			//System.out.println("from: "+edge.getIdSource());
+			//System.out.println("to: "+edge.getIdDestination());
+			//System.out.println("cost: "+edge.getCost());
+			//System.out.println("mode: "+edge.isMode());
+			//System.out.println("*****************");
 		}
 		
-		printWriter.println("=======================");
+		//System.out.println("=======================");
 		
 		return minPath;
 	}

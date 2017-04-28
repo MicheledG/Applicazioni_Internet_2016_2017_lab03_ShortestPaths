@@ -1,6 +1,10 @@
 package it.polito.ai.es03.application;
 
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,29 +72,39 @@ public class App
 	    if(neighborhoodGraph == null) return;
 	    
 	    //DIJKSTRA TIME!
-	    
-	    MinPathsCalculator minPathsCalculator;
+		FileOutputStream fileOutputStream;
 		try {
-			minPathsCalculator = new MinPathsCalculator(busStopIds, neighborhoodGraph);
+			fileOutputStream = new FileOutputStream("log.txt");
 		} catch (FileNotFoundException e) {
-			System.out.println("Error creating MinPathsCalculator");
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.out.println("Error opening log file");
 			return;
 		}
-	    Map<String, List<MinPath>> minPathsByStop = new HashMap<String, List<MinPath>>();
-	    //int i = 0;
+		OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8);
+	    PrintWriter printWriter = new PrintWriter(outputStreamWriter, true);
+	    
+	    MinPathsCalculator minPathsCalculator;
+		minPathsCalculator = new MinPathsCalculator(busStopIds, neighborhoodGraph);
+		int totalNumberMinPaths = 0;
+		
 	    for (String stopId: neighborhoodGraph.getStopWithNeighborhood()) {
 			List<MinPath> minPaths = minPathsCalculator.getMinPathsFromOneStop(stopId);
-			minPathsByStop.put(stopId, minPaths);
-//			i++;
-//			if(i == 1)
-//				break;
-			int totalMinPaths = 0;
-	    	for (Map.Entry<String, List<MinPath>> mapEntry : minPathsByStop.entrySet()) {
-				totalMinPaths += mapEntry.getValue().size();
-			}
-		    
-		    System.out.println("Total number of minimum paths found: "+totalMinPaths);
+			int numberMinPaths = minPaths.size();
+			totalNumberMinPaths += numberMinPaths;
+			printWriter.println("====================================================");
+			printWriter.println("Stop: "+stopId);
+		    printWriter.println("Number of minimum paths found: "+numberMinPaths);
+			printWriter.println("Total number of minimum paths found: "+totalNumberMinPaths);
+			printWriter.println("====================================================");
+			System.out.println("====================================================");
+			System.out.println("Stop: "+stopId);
+		    System.out.println("Number of minimum paths found: "+numberMinPaths);
+			System.out.println("Total number of minimum paths found: "+totalNumberMinPaths);
+			System.out.println("====================================================");
 	    }
+	    
+	    printWriter.close();
 	    
     }
     
