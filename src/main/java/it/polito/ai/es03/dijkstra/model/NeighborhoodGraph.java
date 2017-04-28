@@ -14,7 +14,10 @@ public class NeighborhoodGraph {
 	}
 	
 	public void addStopNeighbor(String stopId, Neighbor neighbor){
-				
+		
+		if(neighbor.getId().equals(stopId))
+			return;
+		
 		System.out.println("=====================");
 		System.out.println("Neighborhood");
 		System.out.println("from stop: "+stopId);

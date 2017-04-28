@@ -1,5 +1,6 @@
 package it.polito.ai.es03.application;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,11 +69,27 @@ public class App
 	    
 	    //DIJKSTRA TIME!
 	    
-	    MinPathsCalculator minPathsCalculator = new MinPathsCalculator(busStopIds, neighborhoodGraph);
+	    MinPathsCalculator minPathsCalculator;
+		try {
+			minPathsCalculator = new MinPathsCalculator(busStopIds, neighborhoodGraph);
+		} catch (FileNotFoundException e) {
+			System.out.println("Error creating MinPathsCalculator");
+			return;
+		}
 	    Map<String, List<MinPath>> minPathsByStop = new HashMap<String, List<MinPath>>();
+	    //int i = 0;
 	    for (String stopId: neighborhoodGraph.getStopWithNeighborhood()) {
 			List<MinPath> minPaths = minPathsCalculator.getMinPathsFromOneStop(stopId);
 			minPathsByStop.put(stopId, minPaths);
+//			i++;
+//			if(i == 1)
+//				break;
+			int totalMinPaths = 0;
+	    	for (Map.Entry<String, List<MinPath>> mapEntry : minPathsByStop.entrySet()) {
+				totalMinPaths += mapEntry.getValue().size();
+			}
+		    
+		    System.out.println("Total number of minimum paths found: "+totalMinPaths);
 	    }
 	    
     }
