@@ -171,10 +171,10 @@ public class MinPathsCalculator {
 		//System.out.println("total cost: "+minPath.getTotalCost());
 		//System.out.println("");
 		//System.out.println("Edges:");
-		int i = minPath.getEdges().size() - 1;
-		int j = 1;
-		for(; i > -1; i--, j++){
-			Edge edge = minPath.getEdges().get(i);
+		//int i = minPath.getEdges().size() - 1;
+		//int j = 1;
+		//for(; i > -1; i--, j++){
+			//Edge edge = minPath.getEdges().get(i);
 			//System.out.println("*****************");
 			//System.out.println("Edge nr."+j);
 			//System.out.println("from: "+edge.getIdSource());
@@ -182,7 +182,7 @@ public class MinPathsCalculator {
 			//System.out.println("cost: "+edge.getCost());
 			//System.out.println("mode: "+edge.isMode());
 			//System.out.println("*****************");
-		}
+		//}
 		
 		//System.out.println("=======================");
 		
