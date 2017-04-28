@@ -7,24 +7,28 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.bson.Document;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
 import it.polito.ai.es03.dijkstra.MinPathsCalculator;
 import it.polito.ai.es03.dijkstra.model.*;
 import it.polito.ai.es03.dijkstra.model.Transport.TransportType;
-import it.polito.ai.es03.dijkstra.model.mongo.MinPath;
 import it.polito.ai.es03.model.hibernate.*;
+import it.polito.ai.es03.mongo.MongoUtil;
 
 public class App 
 {
 	private static SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+	private static MongoClient mongoClient = MongoUtil.getMongoClient();
 	private static NeighborhoodGraph neighborhoodGraph = new NeighborhoodGraph();
 	private static final int RADIUS = 250;
 	
@@ -71,13 +75,13 @@ public class App
 	    
 	    if(neighborhoodGraph == null) return;
 	    
+	    /*************************************************/
 	    //DIJKSTRA TIME!
-		FileOutputStream fileOutputStream;
+		MongoDatabase mongoDatabase = mongoClient.getDatabase("trasporti");
+	    FileOutputStream fileOutputStream;
 		try {
 			fileOutputStream = new FileOutputStream("log.txt");
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			System.out.println("Error opening log file");
 			return;
 		}
@@ -90,6 +94,7 @@ public class App
 		
 	    for (String stopId: neighborhoodGraph.getStopWithNeighborhood()) {
 			List<MinPath> minPaths = minPathsCalculator.getMinPathsFromOneStop(stopId);
+			
 			int numberMinPaths = minPaths.size();
 			totalNumberMinPaths += numberMinPaths;
 			printWriter.println("====================================================");
@@ -102,6 +107,12 @@ public class App
 		    System.out.println("Number of minimum paths found: "+numberMinPaths);
 			System.out.println("Total number of minimum paths found: "+totalNumberMinPaths);
 			System.out.println("====================================================");
+			
+			//insert in MongoDB
+			for (MinPath minPath : minPaths) {
+				insertMinPathInMongo(mongoDatabase, minPath);
+			}
+			
 	    }
 	    
 	    printWriter.close();
@@ -175,6 +186,31 @@ public class App
 			Neighbor neighbor2 = new Neighbor(stopId, distance, TransportType.FOOT);
 			neighborhoodGraph.addStopNeighbor(neighborId, neighbor2);
     	}
+	}
+	
+	
+	private static void insertMinPathInMongo(MongoDatabase mongoDatabase, MinPath minPath){
+		
+		MongoCollection<Document> minPathCollection = mongoDatabase.getCollection("MinPaths");
+		
+		List<Document> edgeDocuments = new ArrayList<Document>();
+		for (Edge edge : minPath.getEdges()) {
+			Document edgeDoc = new Document("idSource", edge.getIdSource())
+					.append("idDestination", edge.getIdDestination())
+					.append("mode", edge.isMode())
+					.append("cost", edge.getCost());
+			
+			edgeDocuments.add(edgeDoc);
+		}
+		
+		Document minPathDoc = new Document("idSource", minPath.getIdSource())
+				.append("idDestination", minPath.getIdDestination())
+				.append("totalCost", minPath.getTotalCost())
+				.append("edges", edgeDocuments);
+		
+		//System.out.println(minPathDoc.toJson());
+		
+		minPathCollection.insertOne(minPathDoc);
 	}
 	
 }

@@ -1,4 +1,4 @@
-package it.polito.ai.es03.dijkstra.model.mongo;
+package it.polito.ai.es03.dijkstra.model;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package it.polito.ai.es03.dijkstra.model.mongo;
+package it.polito.ai.es03.dijkstra.model;
 /**
  * Questa classe non rappresenta l'arco di un grafo,
  * ma una tratta di un percorso.

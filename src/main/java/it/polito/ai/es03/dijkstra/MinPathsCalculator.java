@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import it.polito.ai.es03.dijkstra.model.Edge;
+import it.polito.ai.es03.dijkstra.model.MinPath;
 import it.polito.ai.es03.dijkstra.model.Neighbor;
 import it.polito.ai.es03.dijkstra.model.NeighborhoodGraph;
 import it.polito.ai.es03.dijkstra.model.Node;
-import it.polito.ai.es03.dijkstra.model.mongo.Edge;
-import it.polito.ai.es03.dijkstra.model.mongo.MinPath;
 
 public class MinPathsCalculator {
 	
