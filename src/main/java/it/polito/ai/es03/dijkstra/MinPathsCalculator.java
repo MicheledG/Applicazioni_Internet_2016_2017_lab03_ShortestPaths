@@ -162,7 +162,7 @@ public class MinPathsCalculator {
 		minPath.setIdDestination(lastPathNode.getId());
 		minPath.setTotalCost(0);
 		
-		getPreviousEdgeRecursive(visitedSet, minPath, lastPathNode);
+		getPreviousEdgeRecursive(visitedSet, minPath, lastPathNode, 1);
 		
 		//System.out.println("=======================");
 		//System.out.println("Minimum path info:");
@@ -189,7 +189,7 @@ public class MinPathsCalculator {
 		return minPath;
 	}
 
-	private void getPreviousEdgeRecursive(Map<String, Node> visitedSet, MinPath minPath, Node lastNode) {
+	private void getPreviousEdgeRecursive(Map<String, Node> visitedSet, MinPath minPath, Node lastNode, int previousEdgeSequenceNumber) {
 
 		if(lastNode.getPreviousNodeId() == null){
 			//initial node
@@ -199,6 +199,8 @@ public class MinPathsCalculator {
 		else{
 			//not initial node
 			Edge edge = new Edge();
+			int edgeSequenceNumber = previousEdgeSequenceNumber-1;
+			edge.setSequenceNumber(edgeSequenceNumber);
 			edge.setIdDestination(lastNode.getId());
 			edge.setIdSource(lastNode.getPreviousNodeId());
 			int edgeCost = neighborhoodGraph.getStopNeighbor(edge.getIdSource(), edge.getIdDestination()).getCost();
@@ -215,7 +217,7 @@ public class MinPathsCalculator {
 			minPath.getEdges().add(edge);
 			
 			Node previousNode = visitedSet.get(lastNode.getPreviousNodeId());
-			getPreviousEdgeRecursive(visitedSet, minPath, previousNode);
+			getPreviousEdgeRecursive(visitedSet, minPath, previousNode, edgeSequenceNumber);
 			return;
 		}
 	}
