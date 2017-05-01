@@ -198,7 +198,8 @@ public class App
 			Document edgeDoc = new Document("idSource", edge.getIdSource())
 					.append("idDestination", edge.getIdDestination())
 					.append("mode", edge.isMode())
-					.append("cost", edge.getCost());
+					.append("cost", edge.getCost())
+					.append("sequenceNumber", edge.getSequenceNumber());
 			
 			edgeDocuments.add(edgeDoc);
 		}
